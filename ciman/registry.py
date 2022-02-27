@@ -1,6 +1,5 @@
 import httpx
 import re
-from rich import print as rprint
 
 DEFAULT_REGISTRY = "https://index.docker.io"
 
@@ -56,4 +55,4 @@ class DockerRegistryClient(object):
         manifest_url = f"{self.api_url}{name}/manifests/{tag}"
         request = self.http_client.get(manifest_url)
         request.raise_for_status()
-        rprint(request.json())
+        return request.json()

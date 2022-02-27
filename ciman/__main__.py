@@ -1,5 +1,6 @@
 import typer
 from .registry import DockerRegistryClient
+from .view.info import print_image_info
 
 app = typer.Typer()
 
@@ -10,7 +11,8 @@ def info(image_name: str = typer.Argument(..., help="The name of the image")):
     Show information for an image stored in a docker registry
     """
     drc = DockerRegistryClient()
-    drc.GetRepositoryInfo(image_name)
+    ri = drc.GetRepositoryInfo(image_name)
+    print_image_info(ri)
 
 
 @app.command()
