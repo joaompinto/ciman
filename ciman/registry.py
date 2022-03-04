@@ -1,7 +1,8 @@
 import httpx
 import re
+import os
 
-DEFAULT_REGISTRY = "https://index.docker.io"
+DEFAULT_REGISTRY = os.environ.get("DOCKER_REGISTRY", "https://registry-1.docker.io")
 
 API_URL = "/v2/"
 
@@ -30,6 +31,8 @@ class DockerRegistryClient(object):
             results = regex.findall(auth_realm)
             assert len(results) == 1
             self.auth_service, self.registry_service = results[0]
+        else:
+            request.raise_for_status()
 
     def get_scoped_token(
         self, resource_type: str, resource_name: str, resource_actions: list
@@ -41,7 +44,8 @@ class DockerRegistryClient(object):
         )
         request = self.auth_client.get(url)
         request.raise_for_status()
-        return request.json()["token"]
+        token = request.json()["token"]
+        self.http_client.headers = {"Authorization": f"Bearer {token}"}
 
     def GetRepositoryInfo(self, name: str):
         if ":" in name:
@@ -50,9 +54,22 @@ class DockerRegistryClient(object):
             tag = "latest"
         if "/" not in name:
             name = f"library/{name}"
-        token = self.get_scoped_token("repository", name, ["pull"])
-        self.http_client.headers = {"Authorization": f"Bearer {token}"}
+        self.get_scoped_token("repository", name, ["pull"])
         manifest_url = f"{self.api_url}{name}/manifests/{tag}"
         request = self.http_client.get(manifest_url)
         request.raise_for_status()
         return request.json()
+
+    def GetTags(self, name):
+        if "/" not in name:
+            name = f"library/{name}"
+        self.get_scoped_token("repository", name, ["pull"])
+        tags_url = f"{self.api_url}{name}/tags/list"
+        request = self.http_client.get(tags_url)
+        request.raise_for_status()
+        return request.json()
+
+    def GetCatalog(self):
+        url = f"{self.api_url}_catalog"
+        request = self.http_client.get(url)
+        request.raise_for_status()

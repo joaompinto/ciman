@@ -62,3 +62,8 @@ json_print_rules = {
 
 def print_image_info(image_json):
     print_item(json_print_rules, [], image_json)
+
+
+def print_tags_info(tags_info):
+    for tag in tags_info["tags"]:
+        print(tag)
