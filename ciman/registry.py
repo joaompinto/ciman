@@ -73,6 +73,9 @@ class DockerRegistryClient(object):
         self.FillLayerSize()
         return self.repository_info[reference]
 
+    def GetManifest(self):
+        return self.repository_info[self.last_reference]
+
     def GetTags(self, name):
         if "/" not in name:
             name = f"library/{name}"
@@ -97,10 +100,21 @@ class DockerRegistryClient(object):
         return request.headers
 
     def FillLayerSize(self):
-        layers = self.repository_info[self.last_reference]["fsLayers"]
+        layers = self.GetLayers()
         for layer in layers:
             layer_info = self.GetLayerInfo(layer)
             layer["size"] = int(layer_info["content-length"])
+
+    def GetLayer(self, layer, update_hook, output_filename):
+        url = f"{self.api_url}{self.last_name}/blobs/{layer['blobSum']}"
+        with httpx.stream(
+            "GET", url, follow_redirects=True, headers=self.http_client.headers
+        ) as r:
+            r.raise_for_status()
+            with open(output_filename.name, "wb+") as output_file:
+                for data in r.iter_bytes(chunk_size=50000):
+                    output_file.write(data)
+                    update_hook(len(data))
 
 
 def get_fqdn_image_name(image_name: str):
