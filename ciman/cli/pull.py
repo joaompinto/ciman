@@ -10,16 +10,16 @@ from rich.progress import (
     TimeRemainingColumn,
     BarColumn,
 )
-from ..registry import DockerRegistryClient, get_fqdn_image_name
-from ..layers_cache import LayersCache
-from ..images_cache import ImagesCache
+from ciman.registry import DockerRegistryClient, get_fqdn_image_name
+from ciman.cache.layers import LayersCache
+from ciman.cache.images import ImagesCache
 
 LCACHE = LayersCache()
 ICACHE = ImagesCache()
 
 
 def unique_layers(layers):
-    """ return layers with unique blobSum """
+    """return layers with unique blobSum"""
     seen_sums = []
     un_layers = []
     for layer in layers:
@@ -32,7 +32,7 @@ def unique_layers(layers):
 
 
 def only_not_cached(layers):
-    """ return layers which are not cached  """
+    """return layers which are not cached"""
     not_cached = []
     for layer in layers:
         blobSum = layer["blobSum"]

@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 import json
-from .layers_cache import LayersCache
+from .layers import LayersCache
 
 CIMAN_BASE_DIR = os.getenv("CIMAN_BASE", "~/.ciman/images")
 CACHE_DIR = Path(CIMAN_BASE_DIR).expanduser()
@@ -18,14 +18,20 @@ class ImagesCache:
 
     def GetImage(self, image_name):
         layer_fname = Path(CACHE_DIR, f"{image_name}.json")
+        if ":" not in image_name:
+            find_layer = [x for x in Path(CACHE_DIR).glob(f"{image_name}:*.json")]
+            if len(find_layer) == 1:
+                layer_fname = find_layer[0]
         if layer_fname.exists():
             with open(layer_fname) as json_file:
                 return json.load(json_file)
 
-    def GetImageSize(self, image_name):
+    def GetLayers(self, image_name):
         img_info = self.GetImage(image_name)
-        layers = img_info["manifest"]["fsLayers"]
-        total = sum(layer["size"] for layer in layers)
+        return img_info["manifest"]["fsLayers"]
+
+    def GetImageSize(self, image_name):
+        total = sum(layer["size"] for layer in self.GetLayers(image_name))
         return total
 
     def StoreImage(self, local_image_name, image_json):
