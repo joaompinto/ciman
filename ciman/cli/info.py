@@ -1,7 +1,7 @@
 import json
 import typer
 from typing import Optional
-from ciman.registry import DockerRegistryClient, get_fqdn_image_name
+from ciman.registry import DockerRegistryClient
 from ciman.view.info import print_image_info
 
 
@@ -14,10 +14,10 @@ def info(
     """
     Show information for an image stored in a docker registry
     """
-    registry, image_name = get_fqdn_image_name(image_name)
+    registry, repository, tag = DockerRegistryClient.parse_image_url(image_name)
     drc = DockerRegistryClient(registry)
-    ri = drc.GetRepositoryInfo(image_name)
+    manifest = drc.get_manifest(repository, tag)
     if output_format == "json":
-        print(json.dumps(drc.GetManifest(), indent=4))
+        print(json.dumps(manifest, indent=4))
     else:
-        print_image_info(ri)
+        print_image_info(manifest)

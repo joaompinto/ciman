@@ -2,6 +2,7 @@ black
 flake8
 pre-commit
 pytest
+pytest_httpserver
 setuptools_scm
 tox
 wheel

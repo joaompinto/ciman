@@ -10,6 +10,16 @@
 
 This package provides a **C**ontainer **I**mage **MAN**agement Python library and command line utility
 
+##
+
+|  | ciman | docker | podman
+| --- |:-----------:|:---:|:---:|
+| Rootless install | :heavy_check_mark: | :x: |
+| Remote image info | :heavy_check_mark: | :x: |
+| Remote image history | :heavy_check_mark: | :x: |
+
+
+
 ## Requirements
 Python 3.6+
 
@@ -18,6 +28,12 @@ Python 3.6+
 
 ```bash
 pip install ciman
+```
+
+To use "run"
+```bash
+mkdir -p ~/.ciman/bin
+curl -L https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static -o ~/.ciman/bin/proot
 ```
 
 ## How to use (command ine tool)

@@ -1,6 +1,5 @@
 import json
 from rich.text import Text
-from ciman.jsonrules import print_item
 from ciman.view.console import console
 
 
@@ -68,6 +67,7 @@ def pretty_print(_, value):
 
 json_print_rules = {
     1: print_key_and_value,
+    "config.architecture": print_key_and_value,
     "fsLayers": print_key,
     "history": print_key,
     "blobSum": print_checksum,
@@ -76,8 +76,51 @@ json_print_rules = {
 }
 
 
-def print_image_info(image_json):
-    print_item(json_print_rules, [], image_json)
+def print_config(image_json):
+    # print_text(Text.assemble((f"{key[0] : <16}", "bold magenta"), value))
+    print_text(Text.assemble(("Config", "bold magenta")))
+
+    key_list = ["Architecture", "OS"]
+    for key in key_list:
+        key_text = Text.assemble(
+            (f"  {key: <16}", "bold magenta"), image_json["config"][key.lower()]
+        )
+        print_text(key_text)
+
+    config = image_json["config"].get("config")
+    if config:
+        delete_values(config, [False, "", None, {}])
+        config_cmd = config.get("Cmd")
+        if config_cmd:
+            config["Cmd"] = " ".join(config_cmd)
+
+        for key, value in config.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                print_text(Text.assemble((f"  {key: <16}", "bold magenta")))
+                for item in value:
+                    print_text(Text.assemble(f"    {item: <16}"))
+            else:
+                print_text(Text.assemble((f"  {key: <16}", "bold magenta"), value))
+
+
+def print_layers(manifest):
+    total_size = 0
+    print_text(Text.assemble(("Layer(s)", "bold magenta")))
+    for layer in manifest["layers"]:
+        layer_size = layer["size"]
+        total_size += layer_size
+        print_text(Text.assemble(f"  {layer['digest']: <16}"), sizeof_fmt(layer_size))
+    print_text(
+        Text.assemble((f"  {'Total size': <16}", "bold magenta")),
+        sizeof_fmt(total_size),
+    )
+
+
+def print_image_info(manifest):
+    print_config(manifest)
+    print_layers(manifest)
 
 
 def print_tags_info(tags_info):

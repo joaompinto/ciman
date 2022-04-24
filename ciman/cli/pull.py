@@ -10,9 +10,10 @@ from rich.progress import (
     TimeRemainingColumn,
     BarColumn,
 )
-from ciman.registry import DockerRegistryClient, get_fqdn_image_name
+from ciman.registry import DockerRegistryClient
 from ciman.cache.layers import LayersCache
 from ciman.cache.images import ImagesCache
+from ciman.view.info import sizeof_fmt
 
 LCACHE = LayersCache()
 ICACHE = ImagesCache()
@@ -35,9 +36,9 @@ def only_not_cached(layers):
     """return layers which are not cached"""
     not_cached = []
     for layer in layers:
-        blobSum = layer["blobSum"]
-        if LCACHE.GetLayer(blobSum):
-            print(f"Layer {blobSum} found cached")
+        digest = layer["digest"]
+        if LCACHE.GetLayer(digest):
+            print(f"Layer {digest} found cached")
         else:
             not_cached.append(layer)
     return not_cached
@@ -47,24 +48,24 @@ def pull(image_name: str = typer.Argument(..., help="The name of the image")):
     """
     Pull image from a docker registry
     """
-    registry, image_name = get_fqdn_image_name(image_name)
+    registry, repository, tag = DockerRegistryClient.parse_image_url(image_name)
     drc = DockerRegistryClient(registry)
-    drc.GetRepositoryInfo(image_name)
-    layers = unique_layers(drc.GetLayers())
+    manifest = drc.get_manifest(repository, tag)
+    source_reference = f"{registry}/{repository}:{tag}"
+    layers = manifest["layers"]
     layers = only_not_cached(layers)
-    local_image_name = drc.last_reference.split("/")[-1]
+    local_image_name = f"{repository}:{tag}"
+    total_size = sum([layer["size"] for layer in layers])
     print(
-        f"Pulling {len(layers)} layer(s) for image {registry}/{drc.last_reference} to local image {local_image_name}"
+        f"Pulling {len(layers)} layer(s) [{sizeof_fmt(total_size)}] "
+        f"for image {source_reference} to local image {local_image_name}"
     )
     if len(layers) == 0:
         print("All layers found on cache")
     else:
         pull_layers_in_threads(drc, layers)
 
-    image_json = {
-        "source": f"{registry}/{drc.last_reference}",
-        "manifest": drc.GetManifest(),
-    }
+    image_json = {"source": source_reference, "manifest": manifest}
 
     ICACHE.StoreImage(local_image_name, image_json)
 

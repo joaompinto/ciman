@@ -1,5 +1,6 @@
 import json
 from ciman.view.console import console
+from rich.pretty import pprint
 
 
 def print_layer_info(layer_json: dict):
@@ -20,6 +21,11 @@ def print_layer_info(layer_json: dict):
 
 
 def print_image_history(image_json: dict):
+    pprint(image_json)
+    history = image_json["config"]["history"]
+    pprint(history)
+    exit()
+
     def find_child(layers: list, current_layer: dict):
         for item in layers:
             if item.get("parent") == current_layer["id"]:
